@@ -1,0 +1,77 @@
+Tema 2 - PC : Sistem monetar de tip Internet Banking
+Nume, prenume: Calin Catalina
+Grupa, seria: 324CA
+
+Data inceperii temei: 1 mai 2018
+Data finalizarii temei: 6 mai 2018
+
+Mod de lucru:
+
+	Pentru realizarea temei am implementat 2 entitati: un server bancar si
+clientul, care permite utilizatorilor accesarea facilitatilor oferite de server
+prin comenzi tastate. Pentru multiplexarea operatiilor am folosit apelul select.
+Pentru serviciul de tip iBANK, in server am creat un socket TCP pentru asteptarea
+conexiunilor pe portul dat ca parametru. Clientul se conecteaza la server la fel,
+prin tcp si trimite comenzile tastate la stdin acestuia, serverul tinand o evidenta
+a sesiunilor deschise de catre clienti. Cand primim date de la client, le prelucram
+efectuand operatiile de care avem nevoie.
+	Pe parcursul implementarii temei am folosit pe larg diverse structuri din C++,
+cum ar fi map, pe care le voi detalia mai sus.
+
+**Comanda login: 
+	
+	Verific daca primul cuvant din comanda primita este login si daca clientul dat
+nu are cumva o sesiune deschisa anterior(cu ajutorul vectorului client_login, care pentru
+fiecare client are valoarea 0 sau 1, in dependenta daca este sau nu logat clientul i). 
+Dupa aceasta, verific daca alt client nu s-a logat anterior pe cardul dat(utilizand
+mapul cards_logged, care stocheaza cardurile in care s-a logat cineva anterior). Daca
+nu s-a logat nimeni anterior, verificam daca cardul introdus exista sau nu in fisier,
+daca nu exista returnam eroare, daca exista verificam pinul si nr de dati in care este
+introdus incorect. Daca pinul este corect, trimitem un mesaj de welcome, daca nu, incrementam
+erorile de introducere a pinului pentru cardul dat, blocand cardul daca este necesar. Tot aici,
+daca cineva se logheaza la un card, memorizam in mapul listsolds  : sold cont al cardului dat,
+vom introduce in vectorul de carduri logate(cards_logged) acest card si vom insera o pereche noua
+in mapul client_cards, unde cheia este un client, iar valoare este cardul la care este logat.
+	Din client, am verificam mereu daca se introduce login, sa fie o sesiunea inchisa, daca
+e deschisa, nu trimit nimic serverului, doar afisez mesaj la ecran. Ca sa stabilesc daca o sesiune
+este deschisa, retin momentul in care primesc un mesaj ce contine welcome, si o inchid cand primesc
+un mesaj ce contine deconectat (de la "IBANK> Clientul a fost deconectat").
+
+
+**Comanda logout:
+
+	Verificam daca clientul dat este logat anterior, il delogam, stergem cardul din vectorul
+cu carduri logate si ii stergem asocierea client-card din client_cards, pentru ca clientul
+deja nu mai este legat de cardul dat.
+
+
+**Comanda listsold:
+	
+	Verificam daca clientul este logat anterior, extragem din listsold soldul cardului aferent
+clientului si il trimitem ca double cu 2 zecimale.
+
+**Comanda transfer:
+
+	Verificam daca clientul este logat anterior, verificam daca in fisier exista numarul de card
+scris in comanda de transfer, daca nu exista trimitem mesaj de eroare, daca exista, verificam daca
+ne ajunge bani sa facem transfer(folosind la fel mapul listsolds). Daca ne ajunge, trimitem cererea de
+confirmare clientului si introducem in client_transfer clientul dat, ca fiind in stare de asteptare.
+La fel, folosesc un map transfers, unde cheia reprezinta cardul de la care vrem sa transferam, 
+valoarea resprezinta o pereche (cardul la care vrem sa trimitem bani, suma).
+Daca primim mesajul "y" si clientul este in stare de asteptare a confirmarii, resetam starea data si
+facem transferul folosind datele din mapul transfers, daca primim alt mesaj, pur si simplu resetam 
+starea de asteptare. 
+
+
+** Comanda quit (server):
+	Daca tastam de la server comanda quit, inchidem serverul, iar in client recv va returna 0,
+afisam in cazul dat un mesaj "Conexiune inchisa de server" si inchidem clientii.
+
+
+** Comanda quit (client):
+	Daca tastam de la client quit, trimitem aceasta comanda serverului, inchidem fisierul log initiat,
+ne deconectam, serverul face toate operatiile de delogare etc. si la sfarsit inchidem conexiunea cu acesta 
+si il stergem din multimea read_fds.
+
+
+
